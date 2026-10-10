@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro diario – Nutrición y Dietética | Clínica Salud Arequipa</title>
+
+  <!-- Librerías para generar el PDF (cdnjs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    /* =========================================================
+       VARIABLES DE DISEÑO (paleta pastel)
+       ========================================================= */
+    :root {
+      --menta: #cdeee0;
+      --menta-oscuro: #3f8f74;
+      --celeste: #d4e9f7;
+      --celeste-oscuro: #3a7ca5;
+      --lavanda: #e4dcf5;
+      --lavanda-oscuro: #6d5aa8;
+      --melocoton: #fde0cf;
+      --melocoton-oscuro: #c26b3d;
+      --rosa: #f9d6dc;
+      --rojo: #c0392b;
+      --verde: #23885a;
+
+      --fondo: #f7f9fb;
+      --blanco: #ffffff;
+      --texto: #2f3b45;
+      --texto-suave: #6b7b88;
+      --borde: #dfe6ec;
+      --fila-alterna: #f6faf9;
+      --fila-hover: #eef7f3;
+
+      --radio: 12px;
+      --sombra: 0 4px 14px rgba(47, 59, 69, 0.08);
+      --fuente: "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--fuente);
+      background: var(--fondo);
+      color: var(--texto);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    /* =========================================================
+       ENCABEZADO
+       ========================================================= */
+    .encabezado {
+      background: linear-gradient(120deg, var(--menta) 0%, var(--celeste) 55%, var(--lavanda) 100%);
+      padding: 22px 28px;
+      box-shadow: var(--sombra);
+    }
+    .encabezado-contenido {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .marca h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #24524a;
+      letter-spacing: 0.3px;
+    }
+    .marca h2 {
+      margin: 2px 0 0;
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #3d5a73;
+    }
+    .marca .fecha-larga {
+      margin-top: 6px;
+      font-size: 0.95rem;
+      color: var(--texto-suave);
+    }
+    .selector-fecha {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.75);
+      padding: 10px 14px;
+      border-radius: var(--radio);
+      flex-wrap: wrap;
+    }
+    .selector-fecha label { font-weight: 600; font-size: 0.9rem; }
+    .selector-fecha input[type="date"] {
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--texto);
+      background: var(--blanco);
+    }
+
+    /* =========================================================
+       CONTENEDOR PRINCIPAL Y BARRA DE HERRAMIENTAS
+       ========================================================= */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px 24px 40px;
+    }
+    .barra-herramientas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .estado-guardado {
+      margin-left: auto;
+      font-size: 0.88rem;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: var(--menta);
+      color: var(--menta-oscuro);
+      font-weight: 600;
+    }
+    .estado-guardado.pendiente {
+      background: var(--melocoton);
+      color: var(--melocoton-oscuro);
+    }
+    .aviso-dia {
+      background: var(--lavanda);
+      color: var(--lavanda-oscuro);
+      border-radius: var(--radio);
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 0.92rem;
+      display: none;
+    }
+    .aviso-dia.visible { display: block; }
+
+    /* =========================================================
+       BOTONES
+       ========================================================= */
+    .btn {
+      border: none;
+      border-radius: 9px;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 0.93rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.08s ease, filter 0.15s ease, box-shadow 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn:hover { filter: brightness(0.96); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .btn:active { transform: scale(0.97); }
+    .btn:focus-visible { outline: 3px solid var(--celeste-oscuro); outline-offset: 2px; }
+
+    .btn-menta { background: var(--menta); color: #1f5e4a; }
+    .btn-celeste { background: var(--celeste); color: #245a7c; }
+    .btn-lavanda { background: var(--lavanda); color: #4d3d85; }
+    .btn-melocoton { background: var(--melocoton); color: #8e4a25; }
+    .btn-rosa { background: var(--rosa); color: #8e2c3b; }
+    .btn-gris { background: #e9eef2; color: var(--texto); }
+    .btn-peligro { background: #e8796d; color: #fff; }
+
+    .btn-mini {
+      padding: 5px 10px;
+      font-size: 0.82rem;
+      border-radius: 7px;
+    }
+
+    /* =========================================================
+       TARJETAS / SECCIONES
+       ========================================================= */
+    .tarjeta {
+      background: var(--blanco);
+      border-radius: var(--radio);
+      box-shadow: var(--sombra);
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+    .tarjeta-cabecera {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--borde);
+    }
+    .tarjeta-cabecera h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .cab-pacientes { background: linear-gradient(90deg, var(--menta), #eaf8f2); }
+    .cab-egresos { background: linear-gradient(90deg, var(--melocoton), #fef0e7); }
+    .cab-resumen { background: linear-gradient(90deg, var(--lavanda), #f1edfa); }
+
+    .contador {
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.7);
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-left: 8px;
+    }
+
+    /* =========================================================
+       TABLAS ESTILO HOJA DE CÁLCULO
+       ========================================================= */
+    .tabla-contenedor {
+      overflow: auto;
+      max-height: 460px;
+    }
+    table.hoja {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.92rem;
+    }
+    table.hoja th,
+    table.hoja td {
+      border-right: 1px solid var(--borde);
+      border-bottom: 1px solid var(--borde);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    table.hoja th:last-child,
+    table.hoja td:last-child { border-right: none; }
+
+    /* Encabezado fijo al hacer scroll */
+    table.hoja thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--celeste);
+      color: #23506e;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    table.hoja.egresos thead th { background: var(--melocoton); color: #7d4020; }
+
+    table.hoja tbody tr:nth-child(even) td { background: var(--fila-alterna); }
+    table.hoja tbody tr:hover td { background: var(--fila-hover); }
+
+    .col-num { width: 52px; text-align: center !important; color: var(--texto-suave); font-weight: 600; }
+    .col-monto { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .col-acciones { width: 160px; white-space: nowrap; text-align: center !important; }
+    .col-desc { min-width: 220px; }
+    .col-nombre { min-width: 190px; }
+
+    .acciones { display: inline-flex; gap: 6px; }
+
+    .etiqueta-pago {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pago-Efectivo { background: var(--menta); color: #1f5e4a; }
+    .pago-Yape { background: var(--lavanda); color: #4d3d85; }
+    .pago-Transferencia { background: var(--celeste); color: #245a7c; }
+    .pago-Izipay { background: var(--melocoton); color: #8e4a25; }
+
+    .fila-vacia td {
+      text-align: center !important;
+      color: var(--texto-suave);
+      font-style: italic;
+      padding: 26px 10px !important;
+      background: var(--blanco) !important;
+    }
+
+    table.hoja tfoot td {
+      position: sticky;
+      bottom: 0;
+      background: #f0f4f7;
+      font-weight: 700;
+      border-top: 2px solid var(--borde);
+    }
+
+    /* =========================================================
+       RESUMEN DEL DÍA
+       ========================================================= */
+    .resumen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      padding: 18px;
+    }
+    .indicador {
+      border-radius: var(--radio);
+      padding: 14px 16px;
+      background: #f8fafc;
+      border: 1px solid var(--borde);
+    }
+    .indicador .titulo {
+      font-size: 0.82rem;
+      color: var(--texto-suave);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-weight: 600;
+    }
+    .indicador .valor {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .ind-menta { background: #eaf8f2; border-color: var(--menta); }
+    .ind-celeste { background: #edf5fb; border-color: var(--celeste); }
+    .ind-lavanda { background: #f3effb; border-color: var(--lavanda); }
+    .ind-melocoton { background: #fef3ec; border-color: var(--melocoton); }
+
+    .saldo-positivo { background: #e3f6ec !important; border-color: #9fd9bb !important; }
+    .saldo-positivo .valor { color: var(--verde); }
+    .saldo-negativo { background: #fde8e6 !important; border-color: #f0aaa3 !important; }
+    .saldo-negativo .valor { color: var(--rojo); }
+
+    .subtitulo-resumen {
+      padding: 0 18px;
+      margin: 4px 0 -4px;
+      font-size: 0.9rem;
+      color: var(--texto-suave);
+      font-weight: 600;
+    }
+
+    /* =========================================================
+       MODALES
+       ========================================================= */
+    .modal-fondo {
+      position: fixed;
+      inset: 0;
+      background: rgba(47, 59, 69, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+    .modal-fondo.abierto { display: flex; }
+    .modal {
+      background: var(--blanco);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2);
+      animation: aparecer 0.18s ease-out;
+    }
+    @keyframes aparecer {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: none; }
+    }
+    .modal-cabecera {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-cabecera h3 { margin: 0; font-size: 1.15rem; }
+    .modal-cabecera.verde { background: var(--menta); }
+    .modal-cabecera.durazno { background: var(--melocoton); }
+    .modal-cabecera.lila { background: var(--lavanda); }
+    .cerrar-modal {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--texto);
+    }
+    .modal-cuerpo { padding: 18px 20px 6px; }
+    .modal-pie {
+      padding: 14px 20px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .campo { margin-bottom: 14px; }
+    .campo label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+    }
+    .campo label .req { color: var(--rojo); }
+    .campo input,
+    .campo select,
+    .campo textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #cbd6df;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--texto);
+      background: var(--blanco);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .campo textarea { resize: vertical; min-height: 80px; }
+    .campo input:focus,
+    .campo select:focus,
+    .campo textarea:focus {
+      outline: none;
+      border-color: var(--celeste-oscuro);
+      box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
+    }
+    .campo.invalido input,
+    .campo.invalido select,
+    .campo.invalido textarea {
+      border-color: var(--rojo);
+      background: #fff7f6;
+    }
+    .mensaje-error {
+      color: var(--rojo);
+      font-size: 0.82rem;
+      margin-top: 4px;
+      min-height: 0;
+      display: none;
+    }
+    .campo.invalido .mensaje-error { display: block; }
+    .ayuda { font-size: 0.8rem; color: var(--texto-suave); margin-top: 3px; }
+
+    .fila-campos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .monto-wrap { position: relative; }
+    .monto-wrap span {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--texto-suave);
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .monto-wrap input { padding-left: 36px; }
+
+    .texto-confirmacion { padding: 18px 20px 4px; margin: 0; }
+
+    /* =========================================================
+       NOTIFICACIONES (toast)
+       ========================================================= */
+    .toast-contenedor {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 200;
+    }
+    .toast {
+      min-width: 260px;
+      max-width: 360px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      font-size: 0.92rem;
+      font-weight: 500;
+      animation: aparecer 0.2s ease-out;
+      border-left: 5px solid;
+    }
+    .toast.exito { background: #e6f7ef; color: #1f5e4a; border-color: var(--verde); }
+    .toast.error { background: #fdeceb; color: #8e2c22; border-color: var(--rojo); }
+    .toast.info { background: #eaf3fb; color: #245a7c; border-color: var(--celeste-oscuro); }
+
+    footer {
+      text-align: center;
+      color: var(--texto-suave);
+      font-size: 0.82rem;
+      padding: 10px 0 24px;
+    }
+
+    /* =========================================================
+       RESPONSIVE (tablet y pantallas pequeñas)
+       ========================================================= */
+    @media (max-width: 1024px) {
+      body { font-size: 14.5px; }
+      .encabezado { padding: 18px 18px; }
+      main { padding: 16px 14px 32px; }
+      .marca h1 { font-size: 1.35rem; }
+      .tabla-contenedor { max-height: 420px; }
+    }
+    @media (max-width: 720px) {
+      .estado-guardado { margin-left: 0; width: 100%; text-align: center; }
+      .barra-herramientas .btn { flex: 1 1 calc(50% - 10px); justify-content: center; }
+      .fila-campos { grid-template-columns: 1fr; }
+      .selector-fecha { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================== ENCABEZADO ===================== -->
+  <header class="encabezado">
+    <div class="encabezado-contenido">
+      <div class="marca">
+        <h1>Clínica Salud Arequipa</h1>
+        <h2>Área de Nutrición y Dietética · Registro diario de atenciones</h2>
+        <div class="fecha-larga" id="fechaLarga"></div>
+      </div>
+      <div class="selector-fecha">
+        <label for="selectorFecha">Fecha de consulta:</label>
+        <input type="date" id="selectorFecha">
+        <button class="btn btn-gris btn-mini" id="btnHoy" type="button">Hoy</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Aviso cuando se consulta un día distinto a hoy -->
+    <div class="aviso-dia" id="avisoDia"></div>
+
+    <!-- ===================== BARRA DE HERRAMIENTAS ===================== -->
+    <div class="barra-herramientas">
+      <button class="btn btn-menta" id="btnNuevoPaciente" type="button">＋ Nuevo paciente</button>
+      <button class="btn btn-melocoton" id="btnNuevoEgreso" type="button">＋ Nuevo egreso</button>
+      <button class="btn btn-celeste" id="btnGuardar" type="button">💾 Guardar</button>
+      <button class="btn btn-lavanda" id="btnPDF" type="button">📄 Descargar reporte PDF</button>
+      <span class="estado-guardado" id="estadoGuardado">Todo guardado</span>
+    </div>
+
+    <!-- ===================== TABLA DE PACIENTES ===================== -->
+    <section class="tarjeta">
+      <div class="tarjeta-cabecera cab-pacientes">
+        <h3>Pacientes atendidos <span class="contador" id="contadorPacientes">0</span></h3>
+      </div>
+      <div class="tabla-contenedor">
+        <table class="hoja" id="tablaPacientes">
+          <thead>
+            <tr>
+              <th class="col-num">N°</th>
+              <th class="col-nombre">Nombre completo del paciente</th>
+              <th>Tipo de documento</th>
+              <th>N° de documento</th>
+              <th>Medio de pago</th>
+              <th class="col-monto">Monto (S/)</th>
+              <th class="col-desc">Descripción de la atención</th>
+              <th class="col-acciones">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoPacientes"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" style="text-align:right;">Total de ingresos</td>
+              <td class="col-monto" id="pieTotalPacientes">S/ 0.00</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== TABLA DE EGRESOS ===================== -->
+    <section class="tarjeta">
+      <div class="tarjeta-cabecera cab-egresos">
+        <h3>Egresos del día <span class="contador" id="contadorEgresos">0</span></h3>
+      </div>
+      <div class="tabla-contenedor">
+        <table class="hoja egresos" id="tablaEgresos">
+          <thead>
+            <tr>
+              <th class="col-num">N°</th>
+              <th class="col-desc">Motivo del egreso</th>
+              <th class="col-monto">Monto (S/)</th>
+              <th class="col-acciones">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoEgresos"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="text-align:right;">Total de egresos</td>
+              <td class="col-monto" id="pieTotalEgresos">S/ 0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== RESUMEN DEL DÍA ===================== -->
+    <section class="tarjeta">
+      <div class="tarjeta-cabecera cab-resumen">
+        <h3>Resumen del día</h3>
+      </div>
+      <div class="resumen-grid">
+        <div class="indicador ind-celeste">
+          <div class="titulo">Pacientes atendidos</div>
+          <div class="valor" id="resPacientes">0</div>
+        </div>
+        <div class="indicador ind-menta">
+          <div class="titulo">Total de ingresos</div>
+          <div class="valor" id="resIngresos">S/ 0.00</div>
+        </div>
+        <div class="indicador ind-melocoton">
+          <div class="titulo">Total de egresos</div>
+          <div class="valor" id="resEgresos">S/ 0.00</div>
+        </div>
+        <div class="indicador" id="tarjetaSaldo">
+          <div class="titulo">Saldo neto (ingresos − egresos)</div>
+          <div class="valor" id="resSaldo">S/ 0.00</div>
+        </div>
+      </div>
+      <p class="subtitulo-resumen">Ingresos por medio de pago</p>
+      <div class="resumen-grid">
+        <div class="indicador ind-menta">
+          <div class="titulo">Efectivo</div>
+          <div class="valor" id="resEfectivo">S/ 0.00</div>
+        </div>
+        <div class="indicador ind-lavanda">
+          <div class="titulo">Yape</div>
+          <div class="valor" id="resYape">S/ 0.00</div>
+        </div>
+        <div class="indicador ind-celeste">
+          <div class="titulo">Transferencia bancaria</div>
+          <div class="valor" id="resTransferencia">S/ 0.00</div>
+        </div>
+        <div class="indicador ind-melocoton">
+          <div class="titulo">Izipay</div>
+          <div class="valor" id="resIzipay">S/ 0.00</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Clínica Salud Arequipa · Área de Nutrición y Dietética · Los datos se guardan localmente en este navegador.
+  </footer>
+
+  <!-- ===================== MODAL: PACIENTE ===================== -->
+  <div class="modal-fondo" id="modalPaciente" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalPaciente">
+      <div class="modal-cabecera verde">
+        <h3 id="tituloModalPaciente">Nuevo paciente</h3>
+        <button class="cerrar-modal" type="button" data-cerrar="modalPaciente" aria-label="Cerrar">&times;</button>
+      </div>
+      <form id="formPaciente" novalidate>
+        <div class="modal-cuerpo">
+          <div class="campo" id="campoNombre">
+            <label for="pacNombre">Nombre completo del paciente <span class="req">*</span></label>
+            <input type="text" id="pacNombre" maxlength="120" autocomplete="off" placeholder="Ej.: María Fernanda Quispe Mamani">
+            <div class="mensaje-error"></div>
+          </div>
+
+          <div class="fila-campos">
+            <div class="campo" id="campoTipoDoc">
+              <label for="pacTipoDoc">Tipo de documento <span class="req">*</span></label>
+              <select id="pacTipoDoc">
+                <option value="DNI">DNI</option>
+                <option value="Pasaporte">Pasaporte</option>
+                <option value="Carné de Extranjería">Carné de Extranjería</option>
+              </select>
+              <div class="mensaje-error"></div>
+            </div>
+            <div class="campo" id="campoNumDoc">
+              <label for="pacNumDoc">Número de documento <span class="req">*</span></label>
+              <input type="text" id="pacNumDoc" maxlength="12" autocomplete="off">
+              <div class="ayuda" id="ayudaNumDoc"></div>
+              <div class="mensaje-error"></div>
+            </div>
+          </div>
+
+          <div class="fila-campos">
+            <div class="campo" id="campoMedioPago">
+              <label for="pacMedioPago">Medio de pago <span class="req">*</span></label>
+              <select id="pacMedioPago">
+                <option value="">— Seleccione —</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Yape">Yape</option>
+                <option value="Transferencia">Transferencia bancaria</option>
+                <option value="Izipay">Izipay</option>
+              </select>
+              <div class="mensaje-error"></div>
+            </div>
+            <div class="campo" id="campoMonto">
+              <label for="pacMonto">Monto pagado <span class="req">*</span></label>
+              <div class="monto-wrap">
+                <span>S/</span>
+                <input type="number" id="pacMonto" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+              </div>
+              <div class="mensaje-error"></div>
+            </div>
+          </div>
+
+          <div class="campo" id="campoDescripcion">
+            <label for="pacDescripcion">Descripción de la atención recibida</label>
+            <textarea id="pacDescripcion" maxlength="300" placeholder="Ej.: Consulta nutricional inicial, evaluación antropométrica y plan de alimentación."></textarea>
+            <div class="mensaje-error"></div>
+          </div>
+        </div>
+        <div class="modal-pie">
+          <button class="btn btn-gris" type="button" data-cerrar="modalPaciente">Cancelar</button>
+          <button class="btn btn-menta" type="submit" id="btnSubmitPaciente">Registrar paciente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: EGRESO ===================== -->
+  <div class="modal-fondo" id="modalEgreso" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalEgreso">
+      <div class="modal-cabecera durazno">
+        <h3 id="tituloModalEgreso">Nuevo egreso</h3>
+        <button class="cerrar-modal" type="button" data-cerrar="modalEgreso" aria-label="Cerrar">&times;</button>
+      </div>
+      <form id="formEgreso" novalidate>
+        <div class="modal-cuerpo">
+          <div class="campo" id="campoEgrDescripcion">
+            <label for="egrDescripcion">Motivo del egreso <span class="req">*</span></label>
+            <input type="text" id="egrDescripcion" maxlength="150" autocomplete="off" placeholder="Ej.: Compra de útiles de escritorio">
+            <div class="mensaje-error"></div>
+          </div>
+          <div class="campo" id="campoEgrMonto">
+            <label for="egrMonto">Monto <span class="req">*</span></label>
+            <div class="monto-wrap">
+              <span>S/</span>
+              <input type="number" id="egrMonto" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+            </div>
+            <div class="mensaje-error"></div>
+          </div>
+        </div>
+        <div class="modal-pie">
+          <button class="btn btn-gris" type="button" data-cerrar="modalEgreso">Cancelar</button>
+          <button class="btn btn-melocoton" type="submit" id="btnSubmitEgreso">Registrar egreso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: CONFIRMACIÓN ===================== -->
+  <div class="modal-fondo" id="modalConfirmar" aria-hidden="true">
+    <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="tituloConfirmar" style="max-width:440px;">
+      <div class="modal-cabecera lila">
+        <h3 id="tituloConfirmar">Confirmar</h3>
+      </div>
+      <p class="texto-confirmacion" id="textoConfirmar"></p>
+      <div class="modal-pie">
+        <button class="btn btn-gris" type="button" id="btnConfirmarNo">Cancelar</button>
+        <button class="btn btn-peligro" type="button" id="btnConfirmarSi">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor de notificaciones -->
+  <div class="toast-contenedor" id="toasts" aria-live="polite"></div>
+
+  <script>
+    'use strict';
+
+    /* =========================================================
+       CONSTANTES Y ESTADO DE LA APLICACIÓN
+       ========================================================= */
+    const PREFIJO_STORAGE = 'csa_nutricion_registro_';
+    const MEDIOS_PAGO = ['Efectivo', 'Yape', 'Transferencia', 'Izipay'];
+    const NOMBRE_MEDIO = {
+      Efectivo: 'Efectivo',
+      Yape: 'Yape',
+      Transferencia: 'Transferencia bancaria',
+      Izipay: 'Izipay'
+    };
+
+    const estado = {
+      fecha: '',              // Fecha consultada en formato AAAA-MM-DD
+      hoy: '',                // Fecha real del sistema (para detectar cambio de día)
+      pacientes: [],          // Lista de pacientes del día
+      egresos: [],            // Lista de egresos del día
+      cambiosSinGuardar: false,
+      editandoPacienteId: null,
+      editandoEgresoId: null
+    };
+
+    /* Atajo para obtener elementos por id */
+    const $ = (id) => document.getElementById(id);
+
+    /* =========================================================
+       UTILIDADES DE FECHA Y FORMATO
+       ========================================================= */
+
+    /** Devuelve la fecha local actual en formato AAAA-MM-DD (sin desfase UTC). */
+    function fechaHoyISO() {
+      const d = new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+
+    /** Convierte "AAAA-MM-DD" en un objeto Date local. */
+    function isoADate(iso) {
+      const [a, m, d] = iso.split('-').map(Number);
+      return new Date(a, m - 1, d);
+    }
+
+    /** "AAAA-MM-DD" -> "DD/MM/AAAA" (o con otro separador). */
+    function formatoFechaCorta(iso, sep = '/') {
+      const [a, m, d] = iso.split('-');
+      return `${d}${sep}${m}${sep}${a}`;
+    }
+
+    /** Fecha en texto largo, p. ej. "sábado, 10 de octubre de 2026". */
+    function formatoFechaLarga(iso) {
+      const texto = isoADate(iso).toLocaleDateString('es-PE', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
+      return texto.charAt(0).toUpperCase() + texto.slice(1);
+    }
+
+    /** Formatea un número como moneda: "S/ 1,234.50". */
+    function formatoSoles(valor) {
+      const n = Number(valor) || 0;
+      const signo = n < 0 ? '-' : '';
+      const partes = Math.abs(n).toFixed(2).split('.');
+      partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return `${signo}S/ ${partes.join('.')}`;
+    }
+
+    /** Redondea a 2 decimales evitando errores de coma flotante. */
+    function redondear2(n) {
+      return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    }
+
+    /** Escapa texto para insertarlo de forma segura en HTML. */
+    function escaparHTML(texto) {
+      return String(texto ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /** Genera un identificador único para cada registro. */
+    function generarId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    /* =========================================================
+       PERSISTENCIA (localStorage organizado por fecha)
+       ========================================================= */
+
+    function claveStorage(fecha) {
+      return PREFIJO_STORAGE + fecha;
+    }
+
+    /** Carga los datos guardados de una fecha (o una plantilla vacía). */
+    function cargarDia(fecha) {
+      estado.fecha = fecha;
+      estado.pacientes = [];
+      estado.egresos = [];
+
+      try {
+        const crudo = localStorage.getItem(claveStorage(fecha));
+        if (crudo) {
+          const datos = JSON.parse(crudo);
+          estado.pacientes = Array.isArray(datos.pacientes) ? datos.pacientes : [];
+          estado.egresos = Array.isArray(datos.egresos) ? datos.egresos : [];
+        }
+      } catch (err) {
+        console.error('Error al leer localStorage:', err);
+        mostrarToast('No se pudieron leer los datos guardados de este día.', 'error');
+      }
+
+      marcarCambios(false);
+      $('selectorFecha').value = fecha;
+      renderizarTodo();
+    }
+
+    /** Guarda en localStorage los datos del día consultado. */
+    function guardarDia(silencioso = false) {
+      try {
+        const clave = claveStorage(estado.fecha);
+        if (estado.pacientes.length === 0 && estado.egresos.length === 0) {
+          // Si el día queda vacío, se elimina la entrada para no acumular basura
+          localStorage.removeItem(clave);
+        } else {
+          localStorage.setItem(clave, JSON.stringify({
+            fecha: estado.fecha,
+            pacientes: estado.pacientes,
+            egresos: estado.egresos,
+            actualizado: new Date().toISOString()
+          }));
+        }
+        marcarCambios(false);
+        if (!silencioso) {
+          mostrarToast(`Datos del ${formatoFechaCorta(estado.fecha)} guardados correctamente.`, 'exito');
+        }
+        return true;
+      } catch (err) {
+        console.error('Error al guardar en localStorage:', err);
+        mostrarToast('Error al guardar: el almacenamiento del navegador no está disponible o está lleno.', 'error');
+        return false;
+      }
+    }
+
+    /** Actualiza el indicador de "cambios sin guardar". */
+    function marcarCambios(hayCambios) {
+      estado.cambiosSinGuardar = hayCambios;
+      const etiqueta = $('estadoGuardado');
+      if (hayCambios) {
+        etiqueta.textContent = '● Cambios sin guardar';
+        etiqueta.classList.add('pendiente');
+      } else {
+        etiqueta.textContent = '✓ Todo guardado';
+        etiqueta.classList.remove('pendiente');
+      }
+    }
+
+    /* =========================================================
+       CÁLCULOS DEL RESUMEN
+       ========================================================= */
+    function calcularResumen() {
+      const porMedio = { Efectivo: 0, Yape: 0, Transferencia: 0, Izipay: 0 };
+      let ingresos = 0;
+      estado.pacientes.forEach((p) => {
+        ingresos += Number(p.monto) || 0;
+        if (porMedio[p.medioPago] !== undefined) porMedio[p.medioPago] += Number(p.monto) || 0;
+      });
+      const egresos = estado.egresos.reduce((s, e) => s + (Number(e.monto) || 0), 0);
+
+      Object.keys(porMedio).forEach((k) => { porMedio[k] = redondear2(porMedio[k]); });
+      ingresos = redondear2(ingresos);
+      const totalEgresos = redondear2(egresos);
+
+      return {
+        totalPacientes: estado.pacientes.length,
+        ingresos,
+        porMedio,
+        egresos: totalEgresos,
+        saldo: redondear2(ingresos - totalEgresos)
+      };
+    }
+
+    /* =========================================================
+       RENDERIZADO DE LA INTERFAZ
+       ========================================================= */
+    function renderizarTodo() {
+      renderizarEncabezado();
+      renderizarPacientes();
+      renderizarEgresos();
+      renderizarResumen();
+    }
+
+    function renderizarEncabezado() {
+      $('fechaLarga').textContent = formatoFechaLarga(estado.fecha);
+      const aviso = $('avisoDia');
+      if (estado.fecha !== estado.hoy) {
+        aviso.textContent = `Está consultando el registro del ${formatoFechaCorta(estado.fecha)}. ` +
+          'Pulse "Hoy" para volver a la plantilla del día actual.';
+        aviso.classList.add('visible');
+      } else {
+        aviso.classList.remove('visible');
+      }
+    }
+
+    function renderizarPacientes() {
+      const cuerpo = $('cuerpoPacientes');
+      $('contadorPacientes').textContent = estado.pacientes.length;
+
+      if (estado.pacientes.length === 0) {
+        cuerpo.innerHTML = '<tr class="fila-vacia"><td colspan="8">No hay pacientes registrados en esta fecha. ' +
+          'Use el botón "Nuevo paciente" para agregar uno.</td></tr>';
+      } else {
+        cuerpo.innerHTML = estado.pacientes.map((p, i) => `
+          <tr>
+            <td class="col-num">${i + 1}</td>
+            <td class="col-nombre">${escaparHTML(p.nombre)}</td>
+            <td>${escaparHTML(p.tipoDoc)}</td>
+            <td>${escaparHTML(p.numDoc)}</td>
+            <td><span class="etiqueta-pago pago-${escaparHTML(p.medioPago)}">${escaparHTML(NOMBRE_MEDIO[p.medioPago] || p.medioPago)}</span></td>
+            <td class="col-monto">${formatoSoles(p.monto)}</td>
+            <td class="col-desc">${escaparHTML(p.descripcion) || '<span style="color:#9aa7b2">—</span>'}</td>
+            <td class="col-acciones">
+              <div class="acciones">
+                <button class="btn btn-celeste btn-mini" type="button" data-accion="editar-paciente" data-id="${p.id}">✎ Editar</button>
+                <button class="btn btn-rosa btn-mini" type="button" data-accion="eliminar-paciente" data-id="${p.id}">🗑 Eliminar</button>
+              </div>
+            </td>
+          </tr>`).join('');
+      }
+    }
+
+    function renderizarEgresos() {
+      const cuerpo = $('cuerpoEgresos');
+      $('contadorEgresos').textContent = estado.egresos.length;
+
+      if (estado.egresos.length === 0) {
+        cuerpo.innerHTML = '<tr class="fila-vacia"><td colspan="4">No hay egresos registrados en esta fecha.</td></tr>';
+      } else {
+        cuerpo.innerHTML = estado.egresos.map((e, i) => `
+          <tr>
+            <td class="col-num">${i + 1}</td>
+            <td class="col-desc">${escaparHTML(e.descripcion)}</td>
+            <td class="col-monto">${formatoSoles(e.monto)}</td>
+            <td class="col-acciones">
+              <div class="acciones">
+                <button class="btn btn-celeste btn-mini" type="button" data-accion="editar-egreso" data-id="${e.id}">✎ Editar</button>
+                <button class="btn btn-rosa btn-mini" type="button" data-accion="eliminar-egreso" data-id="${e.id}">🗑 Eliminar</button>
+              </div>
+            </td>
+          </tr>`).join('');
+      }
+    }
+
+    function renderizarResumen() {
+      const r = calcularResumen();
+      $('resPacientes').textContent = r.totalPacientes;
+      $('resIngresos').textContent = formatoSoles(r.ingresos);
+      $('resEgresos').textContent = formatoSoles(r.egresos);
+      $('resSaldo').textContent = formatoSoles(r.saldo);
+      $('resEfectivo').textContent = formatoSoles(r.porMedio.Efectivo);
+      $('resYape').textContent = formatoSoles(r.porMedio.Yape);
+      $('resTransferencia').textContent = formatoSoles(r.porMedio.Transferencia);
+      $('resIzipay').textContent = formatoSoles(r.porMedio.Izipay);
+      $('pieTotalPacientes').textContent = formatoSoles(r.ingresos);
+      $('pieTotalEgresos').textContent = formatoSoles(r.egresos);
+
+      // Saldo en verde si es positivo y en rojo si es negativo
+      const tarjeta = $('tarjetaSaldo');
+      tarjeta.classList.remove('saldo-positivo', 'saldo-negativo');
+      if (r.saldo > 0) tarjeta.classList.add('saldo-positivo');
+      else if (r.saldo < 0) tarjeta.classList.add('saldo-negativo');
+    }
+
+    /* =========================================================
+       NOTIFICACIONES Y DIÁLOGOS
+       ========================================================= */
+    function mostrarToast(mensaje, tipo = 'info', duracion = 3500) {
+      const t = document.createElement('div');
+      t.className = `toast ${tipo}`;
+      t.textContent = mensaje;
+      $('toasts').appendChild(t);
+      setTimeout(() => {
+        t.style.transition = 'opacity 0.3s';
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 300);
+      }, duracion);
+    }
+
+    function abrirModal(id) {
+      const m = $(id);
+      m.classList.add('abierto');
+      m.setAttribute('aria-hidden', 'false');
+    }
+
+    function cerrarModal(id) {
+      const m = $(id);
+      m.classList.remove('abierto');
+      m.setAttribute('aria-hidden', 'true');
+    }
+
+    /**
+     * Diálogo de confirmación personalizado.
+     * Devuelve una promesa que se resuelve en true (Aceptar) o false (Cancelar).
+     */
+    function confirmar(mensaje, { titulo = 'Confirmar', textoSi = 'Aceptar', textoNo = 'Cancelar', peligro = true } = {}) {
+      return new Promise((resolver) => {
+        $('tituloConfirmar').textContent = titulo;
+        $('textoConfirmar').textContent = mensaje;
+        const si = $('btnConfirmarSi');
+        const no = $('btnConfirmarNo');
+        si.textContent = textoSi;
+        no.textContent = textoNo;
+        si.className = peligro ? 'btn btn-peligro' : 'btn btn-menta';
+
+        const finalizar = (respuesta) => {
+          si.removeEventListener('click', alAceptar);
+          no.removeEventListener('click', alCancelar);
+          cerrarModal('modalConfirmar');
+          resolver(respuesta);
+        };
+        const alAceptar = () => finalizar(true);
+        const alCancelar = () => finalizar(false);
+
+        si.addEventListener('click', alAceptar);
+        no.addEventListener('click', alCancelar);
+        abrirModal('modalConfirmar');
+        si.focus();
+      });
+    }
+
+    /* =========================================================
+       VALIDACIÓN DE FORMULARIOS
+       ========================================================= */
+    function marcarError(idCampo, mensaje) {
+      const campo = $(idCampo);
+      campo.classList.add('invalido');
+      campo.querySelector('.mensaje-error').textContent = mensaje;
+    }
+
+    function limpiarErrores(form) {
+      form.querySelectorAll('.campo').forEach((c) => {
+        c.classList.remove('invalido');
+        const msg = c.querySelector('.mensaje-error');
+        if (msg) msg.textContent = '';
+      });
+    }
+
+    /**
+     * Valida un monto: obligatorio, positivo y con máximo 2 decimales.
+     * Devuelve { ok, valor, mensaje }.
+     */
+    function validarMonto(textoMonto) {
+      const t = String(textoMonto).trim().replace(',', '.');
+      if (t === '') return { ok: false, mensaje: 'Ingrese el monto.' };
+      if (!/^\d+(\.\d{1,2})?$/.test(t)) {
+        return { ok: false, mensaje: 'Ingrese un número positivo válido con máximo 2 decimales (ej.: 80.00).' };
+      }
+      const valor = redondear2(parseFloat(t));
+      if (!(valor > 0)) return { ok: false, mensaje: 'El monto debe ser mayor que S/ 0.00.' };
+      if (valor > 999999.99) return { ok: false, mensaje: 'El monto es demasiado alto. Verifique el valor.' };
+      return { ok: true, valor };
+    }
+
+    /** Valida el número de documento según su tipo. */
+    function validarDocumento(tipo, numero) {
+      if (numero === '') return 'Ingrese el número de documento.';
+      switch (tipo) {
+        case 'DNI':
+          if (!/^\d{8}$/.test(numero)) return 'El DNI debe tener exactamente 8 dígitos numéricos.';
+          break;
+        case 'Carné de Extranjería':
+          if (!/^[A-Z0-9]{9,12}$/.test(numero)) {
+            return 'El Carné de Extranjería debe tener entre 9 y 12 caracteres (letras y/o números, sin espacios).';
+          }
+          break;
+        case 'Pasaporte':
+          if (!/^[A-Z0-9]+$/.test(numero)) {
+            return 'El pasaporte debe ser alfanumérico (solo letras y números, sin espacios ni símbolos).';
+          }
+          if (numero.length < 5 || numero.length > 12) {
+            return 'El pasaporte debe tener entre 5 y 12 caracteres.';
+          }
+          break;
+        default:
+          return 'Seleccione un tipo de documento válido.';
+      }
+      return null;
+    }
+
+    /** Actualiza el texto de ayuda y límites del campo N° de documento. */
+    function actualizarAyudaDocumento() {
+      const tipo = $('pacTipoDoc').value;
+      const input = $('pacNumDoc');
+      const ayuda = $('ayudaNumDoc');
+      if (tipo === 'DNI') {
+        input.maxLength = 8;
+        input.inputMode = 'numeric';
+        input.placeholder = 'Ej.: 45678912';
+        ayuda.textContent = '8 dígitos numéricos.';
+      } else if (tipo === 'Carné de Extranjería') {
+        input.maxLength = 12;
+        input.inputMode = 'text';
+        input.placeholder = 'Ej.: 001234567';
+        ayuda.textContent = 'De 9 a 12 caracteres.';
+      } else {
+        input.maxLength = 12;
+        input.inputMode = 'text';
+        input.placeholder = 'Ej.: AB1234567';
+        ayuda.textContent = 'Alfanumérico (letras y números).';
+      }
+    }
+
+    /* =========================================================
+       GESTIÓN DE PACIENTES
+       ========================================================= */
+    function abrirFormularioPaciente(id = null) {
+      const form = $('formPaciente');
+      form.reset();
+      limpiarErrores(form);
+      estado.editandoPacienteId = id;
+
+      if (id) {
+        const p = estado.pacientes.find((x) => x.id === id);
+        if (!p) return;
+        $('tituloModalPaciente').textContent = 'Editar paciente';
+        $('btnSubmitPaciente').textContent = 'Actualizar paciente';
+        $('pacNombre').value = p.nombre;
+        $('pacTipoDoc').value = p.tipoDoc;
+        $('pacNumDoc').value = p.numDoc;
+        $('pacMedioPago').value = p.medioPago;
+        $('pacMonto').value = Number(p.monto).toFixed(2);
+        $('pacDescripcion').value = p.descripcion || '';
+      } else {
+        $('tituloModalPaciente').textContent = 'Nuevo paciente';
+        $('btnSubmitPaciente').textContent = 'Registrar paciente';
+        $('pacTipoDoc').value = 'DNI';
+      }
+      actualizarAyudaDocumento();
+      abrirModal('modalPaciente');
+      setTimeout(() => $('pacNombre').focus(), 50);
+    }
+
+    function enviarFormularioPaciente(evento) {
+      evento.preventDefault();
+      const form = $('formPaciente');
+      limpiarErrores(form);
+
+      const nombre = $('pacNombre').value.trim().replace(/\s+/g, ' ');
+      const tipoDoc = $('pacTipoDoc').value;
+      const numDoc = $('pacNumDoc').value.trim().toUpperCase();
+      const medioPago = $('pacMedioPago').value;
+      const montoTexto = $('pacMonto').value;
+      const descripcion = $('pacDescripcion').value.trim();
+
+      let valido = true;
+
+      // Nombre completo: obligatorio, solo letras, espacios, apóstrofos y guiones
+      if (nombre === '') {
+        marcarError('campoNombre', 'El nombre completo del paciente es obligatorio.');
+        valido = false;
+      } else if (nombre.length < 3) {
+        marcarError('campoNombre', 'El nombre debe tener al menos 3 caracteres.');
+        valido = false;
+      } else if (!/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' .-]+$/.test(nombre)) {
+        marcarError('campoNombre', 'El nombre solo puede contener letras, espacios, apóstrofos o guiones.');
+        valido = false;
+      }
+
+      // Documento
+      const errorDoc = validarDocumento(tipoDoc, numDoc);
+      if (errorDoc) {
+        marcarError('campoNumDoc', errorDoc);
+        valido = false;
+      }
+
+      // Medio de pago
+      if (!MEDIOS_PAGO.includes(medioPago)) {
+        marcarError('campoMedioPago', 'Seleccione un medio de pago.');
+        valido = false;
+      }
+
+      // Monto
+      const monto = validarMonto(montoTexto);
+      if (!monto.ok) {
+        marcarError('campoMonto', $('pacMonto').validity.badInput
+          ? 'Ingrese un número válido (ej.: 80.00).'
+          : monto.mensaje);
+        valido = false;
+      }
+
+      if (!valido) {
+        mostrarToast('Revise los campos marcados en rojo.', 'error');
+        const primero = form.querySelector('.campo.invalido input, .campo.invalido select, .campo.invalido textarea');
+        if (primero) primero.focus();
+        return;
+      }
+
+      const datos = { nombre, tipoDoc, numDoc, medioPago, monto: monto.valor, descripcion };
+
+      if (estado.editandoPacienteId) {
+        const indice = estado.pacientes.findIndex((p) => p.id === estado.editandoPacienteId);
+        if (indice !== -1) estado.pacientes[indice] = { ...estado.pacientes[indice], ...datos };
+        mostrarToast('Paciente actualizado. Recuerde pulsar "Guardar".', 'info');
+      } else {
+        estado.pacientes.push({ id: generarId(), ...datos });
+        mostrarToast('Paciente agregado. Recuerde pulsar "Guardar".', 'info');
+      }
+
+      estado.editandoPacienteId = null;
+      cerrarModal('modalPaciente');
+      marcarCambios(true);
+      renderizarPacientes();
+      renderizarResumen();
+    }
+
+    async function eliminarPaciente(id) {
+      const p = estado.pacientes.find((x) => x.id === id);
+      if (!p) return;
+      const ok = await confirmar(
+        `¿Está seguro de eliminar al paciente "${p.nombre}" (${p.tipoDoc} ${p.numDoc})? Esta acción no se puede deshacer.`,
+        { titulo: 'Eliminar paciente', textoSi: 'Sí, eliminar' }
+      );
+      if (!ok) return;
+      estado.pacientes = estado.pacientes.filter((x) => x.id !== id);
+      marcarCambios(true);
+      renderizarPacientes();
+      renderizarResumen();
+      mostrarToast('Paciente eliminado. Recuerde pulsar "Guardar".', 'info');
+    }
+
+    /* =========================================================
+       GESTIÓN DE EGRESOS
+       ========================================================= */
+    function abrirFormularioEgreso(id = null) {
+      const form = $('formEgreso');
+      form.reset();
+      limpiarErrores(form);
+      estado.editandoEgresoId = id;
+
+      if (id) {
+        const e = estado.egresos.find((x) => x.id === id);
+        if (!e) return;
+        $('tituloModalEgreso').textContent = 'Editar egreso';
+        $('btnSubmitEgreso').textContent = 'Actualizar egreso';
+        $('egrDescripcion').value = e.descripcion;
+        $('egrMonto').value = Number(e.monto).toFixed(2);
+      } else {
+        $('tituloModalEgreso').textContent = 'Nuevo egreso';
+        $('btnSubmitEgreso').textContent = 'Registrar egreso';
+      }
+      abrirModal('modalEgreso');
+      setTimeout(() => $('egrDescripcion').focus(), 50);
+    }
+
+    function enviarFormularioEgreso(evento) {
+      evento.preventDefault();
+      const form = $('formEgreso');
+      limpiarErrores(form);
+
+      const descripcion = $('egrDescripcion').value.trim().replace(/\s+/g, ' ');
+      const montoTexto = $('egrMonto').value;
+      let valido = true;
+
+      if (descripcion === '') {
+        marcarError('campoEgrDescripcion', 'Describa brevemente el motivo del egreso.');
+        valido = false;
+      } else if (descripcion.length < 3) {
+        marcarError('campoEgrDescripcion', 'La descripción debe tener al menos 3 caracteres.');
+        valido = false;
+      }
+
+      const monto = validarMonto(montoTexto);
+      if (!monto.ok) {
+        marcarError('campoEgrMonto', $('egrMonto').validity.badInput
+          ? 'Ingrese un número válido (ej.: 25.50).'
+          : monto.mensaje);
+        valido = false;
+      }
+
+      if (!valido) {
+        mostrarToast('Revise los campos marcados en rojo.', 'error');
+        const primero = form.querySelector('.campo.invalido input');
+        if (primero) primero.focus();
+        return;
+      }
+
+      const datos = { descripcion, monto: monto.valor };
+
+      if (estado.editandoEgresoId) {
+        const indice = estado.egresos.findIndex((e) => e.id === estado.editandoEgresoId);
+        if (indice !== -1) estado.egresos[indice] = { ...estado.egresos[indice], ...datos };
+        mostrarToast('Egreso actualizado. Recuerde pulsar "Guardar".', 'info');
+      } else {
+        estado.egresos.push({ id: generarId(), ...datos });
+        mostrarToast('Egreso agregado. Recuerde pulsar "Guardar".', 'info');
+      }
+
+      estado.editandoEgresoId = null;
+      cerrarModal('modalEgreso');
+      marcarCambios(true);
+      renderizarEgresos();
+      renderizarResumen();
+    }
+
+    async function eliminarEgreso(id) {
+      const e = estado.egresos.find((x) => x.id === id);
+      if (!e) return;
+      const ok = await confirmar(
+        `¿Está seguro de eliminar el egreso "${e.descripcion}" por ${formatoSoles(e.monto)}? Esta acción no se puede deshacer.`,
+        { titulo: 'Eliminar egreso', textoSi: 'Sí, eliminar' }
+      );
+      if (!ok) return;
+      estado.egresos = estado.egresos.filter((x) => x.id !== id);
+      marcarCambios(true);
+      renderizarEgresos();
+      renderizarResumen();
+      mostrarToast('Egreso eliminado. Recuerde pulsar "Guardar".', 'info');
+    }
+
+    /* =========================================================
+       CAMBIO DE FECHA Y PLANTILLA DIARIA
+       ========================================================= */
+
+    /** Cambia la fecha consultada, preguntando si hay cambios sin guardar. */
+    async function cambiarFecha(nuevaFecha) {
+      if (!nuevaFecha || nuevaFecha === estado.fecha) {
+        $('selectorFecha').value = estado.fecha;
+        return;
+      }
+      if (estado.cambiosSinGuardar) {
+        const guardar = await confirmar(
+          `Tiene cambios sin guardar en el registro del ${formatoFechaCorta(estado.fecha)}. ¿Desea guardarlos antes de cambiar de fecha?`,
+          { titulo: 'Cambios sin guardar', textoSi: 'Guardar y continuar', textoNo: 'Descartar cambios', peligro: false }
+        );
+        if (guardar && !guardarDia(true)) {
+          $('selectorFecha').value = estado.fecha;
+          return;
+        }
+      }
+      cargarDia(nuevaFecha);
+      if (nuevaFecha === estado.hoy && estado.pacientes.length === 0 && estado.egresos.length === 0) {
+        mostrarToast('Plantilla del día lista para registrar.', 'info');
+      }
+    }
+
+    /**
+     * Detecta el cambio de día mientras la página está abierta.
+     * Si el usuario estaba trabajando en el día anterior, se guardan
+     * automáticamente sus datos y se abre una plantilla en blanco del nuevo día.
+     */
+    function verificarCambioDeDia() {
+      const hoyReal = fechaHoyISO();
+      if (hoyReal === estado.hoy) return;
+
+      const diaAnterior = estado.hoy;
+      estado.hoy = hoyReal;
+      $('selectorFecha').max = hoyReal;
+
+      if (estado.fecha === diaAnterior) {
+        if (estado.cambiosSinGuardar) guardarDia(true);
+        cargarDia(hoyReal);
+        mostrarToast(`Comenzó un nuevo día (${formatoFechaCorta(hoyReal)}). Se abrió una plantilla en blanco; ` +
+          'el registro anterior quedó guardado.', 'info', 7000);
+      } else {
+        renderizarEncabezado();
+      }
+    }
+
+    /* =========================================================
+       EXPORTAR REPORTE EN PDF (jsPDF + AutoTable)
+       ========================================================= */
+
+    /**
+     * Construye el documento PDF aplicando un factor de escala (k) a fuentes
+     * y rellenos. Se usa para reducir el tamaño hasta que todo quepa en una sola hoja A4.
+     */
+    function construirPDF(k) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const ancho = doc.internal.pageSize.getWidth();   // 210 mm
+      const alto = doc.internal.pageSize.getHeight();   // 297 mm
+      const M = 12;                                      // margen lateral
+      const MARGEN_INFERIOR = 30;                        // espacio reservado para firma y pie
+      const resumen = calcularResumen();
+      const ahora = new Date();
+      const horaEmision = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const fechaEmision = formatoFechaCorta(fechaHoyISO());
+
+      // Colores (RGB) de la paleta pastel
+      const C = {
+        menta: [205, 238, 224],
+        celeste: [212, 233, 247],
+        lavanda: [228, 220, 245],
+        melocoton: [253, 224, 207],
+        texto: [47, 59, 69],
+        suave: [107, 123, 136],
+        tituloVerde: [36, 82, 74],
+        borde: [210, 218, 225],
+        alterna: [246, 250, 249],
+        verde: [35, 136, 90],
+        rojo: [192, 57, 43]
+      };
+
+      /* ---------- Encabezado ---------- */
+      doc.setFillColor(...C.menta);
+      doc.rect(0, 0, ancho, 30, 'F');
+      doc.setFillColor(...C.lavanda);
+      doc.rect(0, 30, ancho, 1.4, 'F');
+
+      doc.setTextColor(...C.tituloVerde);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text('Clínica Salud Arequipa - Área de Nutrición y Dietética', ancho / 2, 10.5, { align: 'center' });
+
+      doc.setFontSize(11.5);
+      doc.setTextColor(...C.texto);
+      doc.text('Reporte diario de atenciones e ingresos', ancho / 2, 17.5, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`Fecha del reporte: ${formatoFechaCorta(estado.fecha)}`, M, 25.5);
+      doc.text(`Emitido: ${fechaEmision} a las ${horaEmision} h`, ancho - M, 25.5, { align: 'right' });
+
+      let y = 38;
+
+      /* Título de sección */
+      const tituloSeccion = (texto, yPos, xPos = M) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10 * Math.max(k, 0.8));
+        doc.setTextColor(...C.texto);
+        doc.text(texto, xPos, yPos);
+      };
+
+      /* Estilos comunes de las tablas */
+      const estilosBase = {
+        theme: 'grid',
+        styles: {
+          font: 'helvetica',
+          fontSize: 8 * k,
+          cellPadding: 1.6 * k,
+          textColor: C.texto,
+          lineColor: C.borde,
+          lineWidth: 0.15,
+          overflow: 'linebreak',
+          valign: 'middle'
+        },
+        headStyles: { fontStyle: 'bold', halign: 'center', textColor: C.texto },
+        alternateRowStyles: { fillColor: C.alterna }
+      };
+
+      /* ---------- Tabla de pacientes ---------- */
+      tituloSeccion(`1. Pacientes atendidos (${resumen.totalPacientes})`, y);
+      y += 2;
+
+      const filasPacientes = estado.pacientes.length
+        ? estado.pacientes.map((p, i) => [
+            i + 1,
+            p.nombre,
+            p.tipoDoc,
+            p.numDoc,
+            NOMBRE_MEDIO[p.medioPago] || p.medioPago,
+            formatoSoles(p.monto),
+            p.descripcion || '-'
+          ])
+        : [[{ content: 'No se registraron pacientes en esta fecha.', colSpan: 7, styles: { halign: 'center', fontStyle: 'italic', textColor: C.suave } }]];
+
+      doc.autoTable({
+        ...estilosBase,
+        startY: y,
+        margin: { left: M, right: M, bottom: MARGEN_INFERIOR },
+        head: [['N°', 'Nombre completo', 'Tipo doc.', 'N° documento', 'Medio de pago', 'Monto', 'Descripción de la atención']],
+        body: filasPacientes,
+        foot: [[
+          { content: 'Total de ingresos', colSpan: 5, styles: { halign: 'right' } },
+          { content: formatoSoles(resumen.ingresos), styles: { halign: 'right' } },
+          ''
+        ]],
+        headStyles: { ...estilosBase.headStyles, fillColor: C.celeste },
+        footStyles: { fillColor: [240, 244, 247], textColor: C.texto, fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center' },
+          1: { cellWidth: 42 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 21 },
+          4: { cellWidth: 23 },
+          5: { cellWidth: 21, halign: 'right' },
+          6: { cellWidth: 'auto' }
+        }
+      });
+
+      y = doc.lastAutoTable.finalY + 8 * k;
+      const paginaInicioInferior = doc.getNumberOfPages();
+
+      /* ---------- Egresos (izquierda) y resumen financiero (derecha) ---------- */
+      const anchoUtil = ancho - 2 * M;
+      const anchoEgresos = anchoUtil * 0.55;
+      const xResumen = M + anchoEgresos + 6;
+
+      tituloSeccion(`2. Egresos del día (${estado.egresos.length})`, y);
+      tituloSeccion('3. Resumen financiero', y, xResumen);
+      y += 2;
+
+      const filasEgresos = estado.egresos.length
+        ? estado.egresos.map((e, i) => [i + 1, e.descripcion, formatoSoles(e.monto)])
+        : [[{ content: 'No se registraron egresos.', colSpan: 3, styles: { halign: 'center', fontStyle: 'italic', textColor: C.suave } }]];
+
+      doc.autoTable({
+        ...estilosBase,
+        startY: y,
+        margin: { left: M, right: ancho - M - anchoEgresos, bottom: MARGEN_INFERIOR },
+        tableWidth: anchoEgresos,
+        head: [['N°', 'Motivo del egreso', 'Monto']],
+        body: filasEgresos,
+        foot: [[
+          { content: 'Total de egresos', colSpan: 2, styles: { halign: 'right' } },
+          { content: formatoSoles(resumen.egresos), styles: { halign: 'right' } }
+        ]],
+        headStyles: { ...estilosBase.headStyles, fillColor: C.melocoton },
+        footStyles: { fillColor: [240, 244, 247], textColor: C.texto, fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center' },
+          1: { cellWidth: 'auto' },
+          2: { cellWidth: 24, halign: 'right' }
+        }
+      });
+      const paginaFinEgresos = doc.getNumberOfPages();
+
+      // El resumen se dibuja en la misma página en que comenzó la sección inferior
+      doc.setPage(paginaInicioInferior);
+
+      const saldoColor = resumen.saldo > 0 ? C.verde : (resumen.saldo < 0 ? C.rojo : C.texto);
+      const saldoFondo = resumen.saldo > 0 ? [227, 246, 236] : (resumen.saldo < 0 ? [253, 232, 230] : [240, 244, 247]);
+
+      doc.autoTable({
+        ...estilosBase,
+        startY: y,
+        margin: { left: xResumen, right: M, bottom: MARGEN_INFERIOR },
+        tableWidth: ancho - M - xResumen,
+        head: [['Concepto', 'Importe']],
+        body: [
+          ['Pacientes atendidos', String(resumen.totalPacientes)],
+          ['Ingresos - Efectivo', formatoSoles(resumen.porMedio.Efectivo)],
+          ['Ingresos - Yape', formatoSoles(resumen.porMedio.Yape)],
+          ['Ingresos - Transferencia', formatoSoles(resumen.porMedio.Transferencia)],
+          ['Ingresos - Izipay', formatoSoles(resumen.porMedio.Izipay)],
+          ['Total de ingresos', formatoSoles(resumen.ingresos)],
+          ['Total de egresos', formatoSoles(resumen.egresos)],
+          ['Saldo neto (ingresos - egresos)', formatoSoles(resumen.saldo)]
+        ],
+        headStyles: { ...estilosBase.headStyles, fillColor: C.lavanda },
+        columnStyles: {
+          0: { cellWidth: 'auto' },
+          1: { cellWidth: 26, halign: 'right' }
+        },
+        didParseCell: (data) => {
+          if (data.section !== 'body') return;
+          const fila = data.row.index;
+          // Totales en negrita
+          if (fila === 5 || fila === 6) data.cell.styles.fontStyle = 'bold';
+          // Saldo resaltado en verde (positivo) o rojo (negativo)
+          if (fila === 7) {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.textColor = saldoColor;
+            data.cell.styles.fillColor = saldoFondo;
+          }
+        }
+      });
+
+      // Volver a la última página utilizada
+      doc.setPage(Math.max(paginaFinEgresos, doc.getNumberOfPages()));
+
+      /* ---------- Firma y pie de página (en todas las páginas) ---------- */
+      const totalPaginas = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPaginas; i++) {
+        doc.setPage(i);
+        if (i === totalPaginas) {
+          doc.setDrawColor(...C.suave);
+          doc.setLineWidth(0.3);
+          doc.line(ancho - M - 65, alto - 20, ancho - M, alto - 20);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(...C.texto);
+          doc.text('Firma del responsable del área', ancho - M - 32.5, alto - 16, { align: 'center' });
+        }
+        doc.setDrawColor(...C.borde);
+        doc.setLineWidth(0.2);
+        doc.line(M, alto - 10, ancho - M, alto - 10);
+        doc.setFontSize(7.5);
+        doc.setTextColor(...C.suave);
+        doc.text('Clínica Salud Arequipa - Área de Nutrición y Dietética · Documento de uso interno', M, alto - 6);
+        doc.text(`Página ${i} de ${totalPaginas}`, ancho - M, alto - 6, { align: 'right' });
+      }
+
+      return doc;
+    }
+
+    /** Genera y descarga el PDF asegurando que ocupe una sola hoja A4. */
+    function descargarPDF() {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        mostrarToast('No se pudo cargar la librería jsPDF. Verifique su conexión a Internet.', 'error', 5000);
+        return;
+      }
+      const prueba = new window.jspdf.jsPDF();
+      if (typeof prueba.autoTable !== 'function') {
+        mostrarToast('No se pudo cargar jsPDF-AutoTable. Verifique su conexión a Internet.', 'error', 5000);
+        return;
+      }
+
+      // Se reduce progresivamente el tamaño hasta que el reporte quepa en una página
+      const escalas = [1, 0.92, 0.85, 0.78, 0.72, 0.66, 0.6, 0.55, 0.5, 0.45, 0.4];
+      let doc = null;
+      let unaPagina = false;
+      for (const k of escalas) {
+        doc = construirPDF(k);
+        if (doc.getNumberOfPages() === 1) {
+          unaPagina = true;
+          break;
+        }
+      }
+
+      const nombreArchivo = `Reporte_Nutricion_${formatoFechaCorta(estado.fecha, '-')}.pdf`;
+      doc.save(nombreArchivo);
+
+      if (unaPagina) {
+        mostrarToast(`Reporte "${nombreArchivo}" generado correctamente.`, 'exito');
+      } else {
+        mostrarToast('El reporte tiene demasiados registros para una sola hoja A4; se generó en varias páginas.', 'error', 6000);
+      }
+      if (estado.cambiosSinGuardar) {
+        mostrarToast('Atención: hay cambios sin guardar en el registro.', 'info', 5000);
+      }
+    }
+
+    /* =========================================================
+       EVENTOS
+       ========================================================= */
+    function registrarEventos() {
+      $('btnNuevoPaciente').addEventListener('click', () => abrirFormularioPaciente());
+      $('btnNuevoEgreso').addEventListener('click', () => abrirFormularioEgreso());
+      $('btnGuardar').addEventListener('click', () => guardarDia());
+      $('btnPDF').addEventListener('click', descargarPDF);
+
+      $('formPaciente').addEventListener('submit', enviarFormularioPaciente);
+      $('formEgreso').addEventListener('submit', enviarFormularioEgreso);
+      $('pacTipoDoc').addEventListener('change', () => {
+        actualizarAyudaDocumento();
+        $('campoNumDoc').classList.remove('invalido');
+      });
+
+      // Para DNI solo se permiten dígitos; en los demás, letras y números en mayúsculas
+      $('pacNumDoc').addEventListener('input', (e) => {
+        const tipo = $('pacTipoDoc').value;
+        let v = e.target.value.toUpperCase();
+        v = tipo === 'DNI' ? v.replace(/\D/g, '') : v.replace(/[^A-Z0-9]/g, '');
+        e.target.value = v;
+      });
+
+      // Al corregir un campo, se quita su marca de error
+      document.querySelectorAll('.campo input, .campo select, .campo textarea').forEach((el) => {
+        el.addEventListener('input', () => el.closest('.campo').classList.remove('invalido'));
+      });
+
+      // Botones de editar / eliminar (delegación de eventos)
+      $('cuerpoPacientes').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-accion]');
+        if (!btn) return;
+        if (btn.dataset.accion === 'editar-paciente') abrirFormularioPaciente(btn.dataset.id);
+        if (btn.dataset.accion === 'eliminar-paciente') eliminarPaciente(btn.dataset.id);
+      });
+      $('cuerpoEgresos').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-accion]');
+        if (!btn) return;
+        if (btn.dataset.accion === 'editar-egreso') abrirFormularioEgreso(btn.dataset.id);
+        if (btn.dataset.accion === 'eliminar-egreso') eliminarEgreso(btn.dataset.id);
+      });
+
+      // Cierre de modales con botón "×" / "Cancelar"
+      document.querySelectorAll('[data-cerrar]').forEach((btn) => {
+        btn.addEventListener('click', () => cerrarModal(btn.dataset.cerrar));
+      });
+      // Cierre al hacer clic fuera del modal (solo formularios)
+      ['modalPaciente', 'modalEgreso'].forEach((id) => {
+        $(id).addEventListener('mousedown', (e) => {
+          if (e.target === $(id)) cerrarModal(id);
+        });
+      });
+      // Tecla Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if ($('modalConfirmar').classList.contains('abierto')) $('btnConfirmarNo').click();
+        else {
+          cerrarModal('modalPaciente');
+          cerrarModal('modalEgreso');
+        }
+      });
+      // Atajo Ctrl + S para guardar
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          guardarDia();
+        }
+      });
+
+      // Selector de fecha
+      $('selectorFecha').addEventListener('change', (e) => cambiarFecha(e.target.value));
+      $('btnHoy').addEventListener('click', () => cambiarFecha(fechaHoyISO()));
+
+      // Advertencia al cerrar o recargar con cambios sin guardar
+      window.addEventListener('beforeunload', (e) => {
+        if (estado.cambiosSinGuardar) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+
+      // Revisión periódica del cambio de día (y al volver a la pestaña)
+      setInterval(verificarCambioDeDia, 30000);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) verificarCambioDeDia();
+      });
+    }
+
+    /* =========================================================
+       INICIO
+       ========================================================= */
+    function iniciar() {
+      estado.hoy = fechaHoyISO();
+      $('selectorFecha').max = estado.hoy;
+      registrarEventos();
+      // Al abrir la página siempre se muestra la plantilla del día actual
+      cargarDia(estado.hoy);
+    }
+
+    document.addEventListener('DOMContentLoaded', iniciar);
+  </script>
+</body>
+</html>
